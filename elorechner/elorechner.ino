@@ -2,25 +2,32 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
-#define PLAYERNUMBER 22
+#include <Encoder.h>
+#define PLAYERNUMBER 25
 
 #define OLED_RESET 4
+
 Adafruit_SSD1306 display(OLED_RESET);
+Encoder scrollEnc(5, 6);
+
+// for further reference: http://cdn-reichelt.de/documents/datenblatt/F100/402097STEC12E08.PDF
 
 struct player { uint16_t elo; String name; int id;};
 
 player players[PLAYERNUMBER] = { {1000, "FREDD", 0}, {1000, "HENRI", 1}, {1000, "ANNE ", 2}, {1000, "MARCO", 3}, {1000, "ANNIK", 4}, {1000, "ALEX ", 5}, {1000, "JAKOB", 6}, {1000, "TOBI ", 7},
                                  {1000, "MARIE", 8}, {1000, "THOMA", 9}, {1000, "OLLI ", 10},{1000, "CHRIS", 11},{1000, "ERMAN", 12},{1000, "STEFF", 13},{1000, "SVEN ", 14},{1000, "SANDR", 15},
-                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STEPC", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STEPH", 21} };
+                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STE.C", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STE.H", 21},{1000, "PLY01", 22},{1000, "PLY02", 23},
+                                 {1000, "PLY03", 24} };
 int winner;
 
 int state = 0; //states: 0: list 1: select winner 2: select loser
 
-int button[3] = {0,0,0};
+int button = 0;
 
-int prev_button[3] = {0,0,0};
+int prev_button = 1;
 
 int list_pointer = 0; //highlighted
+long old_scroll_position = 0;
 
 const int K = 15;
 
@@ -74,7 +81,7 @@ void sort_by_elo()
   }
 }
 
-void display_players(String title, player data[],int dim, int pointer, bool highlight)
+void display_players(String title, player data[], int dim, int pointer, bool highlight)
 {
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -136,15 +143,13 @@ void handleInput()
 {
   for(int i = 0; i<3;i++)
   {
-    prev_button[i] = button[i];
+    prev_button = button;
   }
-  button[0] = analogRead(A1)>500?1:0; //Enter
+  button = analogRead(A1)>500?1:0; //Enter
   delay(10);
-  button[1] = analogRead(A0)>500?1:0; //Scroll Up
-  delay(10);
-  button[2] = analogRead(A2)>500?1:0; //Scroll Down
+  
 
-  if(button[0] == 1 && prev_button[0] == 0)
+  if(button == 1 && prev_button == 0)
   {
     if(state == 1)
     {
@@ -156,43 +161,64 @@ void handleInput()
       add_game(winner, list_pointer);
       display_result();
       list_pointer = 0;
-      save();
+      //save();
       sort_by_elo();
       
     }
     state = state>=2?0:state+1;
     
   }
-  if(button[1] == 1 && prev_button[1] == 0)
-  {
-    list_pointer = list_pointer == 0?0:list_pointer-1;
-  }
-  if(button[2] == 1 && prev_button[2] == 0)
+
+  long scroll_position = scrollEnc.read();
+  if(scroll_position>old_scroll_position)
   {
     list_pointer = list_pointer >= PLAYERNUMBER-1?PLAYERNUMBER-1:list_pointer+1;
+    old_scroll_position = scroll_position;
   }
-  delay(10);
+  if(scroll_position<old_scroll_position)
+  {
+    list_pointer = list_pointer == 0?0:list_pointer-1;
+    old_scroll_position = scroll_position;
+  }
 }
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.clearDisplay();
+  display.println("elorechner");
   display.display();
-  delay(1000);
-  load();
-  sort_by_elo();
+  delay(1500);
+  //load();
+  //sort_by_elo();
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println("champion");
+  display.display();
+  delay(1500);
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println(players[0].name);
+  display.display();
+  delay(3000);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
   handleInput();
+
+  Serial.println(list_pointer);
   
   switch(state)
   {
     case 0:
       // title: hall of fame
-      display_players("hall of fame", players,PLAYERNUMBER, list_pointer, true);
+      display_players("hall of fame", players, PLAYERNUMBER, list_pointer, true);
       // toDo scroallable list of players sorted by elo
       // on enter: go to state 1
     break;
