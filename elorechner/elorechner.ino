@@ -2,14 +2,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
-#define PLAYERNUMBER 4
+#define PLAYERNUMBER 22
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
-struct player { int elo; String name; };
+struct player { uint16_t elo; String name; int id;};
 
-player players[PLAYERNUMBER] = { { 1000, "THO"}, {1000, "MAR"}, {1000, "JAK"}, {1000, "ANN"} };
+player players[PLAYERNUMBER] = { {1000, "FREDD", 0}, {1000, "HENRI", 1}, {1000, "ANNE ", 2}, {1000, "MARCO", 3}, {1000, "ANNIK", 4}, {1000, "ALEX ", 5}, {1000, "JAKOB", 6}, {1000, "TOBI ", 7},
+                                 {1000, "MARIE", 8}, {1000, "THOMA", 9}, {1000, "OLLI ", 10},{1000, "CHRIS", 11},{1000, "ERMAN", 12},{1000, "STEFF", 13},{1000, "SVEN ", 14},{1000, "SANDR", 15},
+                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STEPC", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STEPH", 21} };
 int winner;
 
 int state = 0; //states: 0: list 1: select winner 2: select loser
@@ -22,17 +24,19 @@ int list_pointer = 0; //highlighted
 
 const int K = 15;
 
-void sort_by_alphabet(int starting = 1)
+void load()
 {
-  // toDo
+  for(int i = 0; i < PLAYERNUMBER; i++)
+  {
+    EEPROM.get(i*2, players[i].elo);
+  }
 }
 
 void save()
 {
-  sort_by_alphabet();
   for(int i = 0; i<PLAYERNUMBER;i++)
   {
-    //toDo
+    EEPROM.put(players[i].id*2, players[i].elo);
   }
 }
 
@@ -142,10 +146,6 @@ void handleInput()
 
   if(button[0] == 1 && prev_button[0] == 0)
   {
-    if(state == 0)
-    {
-      sort_by_alphabet();
-    }
     if(state == 1)
     {
       winner = list_pointer;
@@ -156,6 +156,7 @@ void handleInput()
       add_game(winner, list_pointer);
       display_result();
       list_pointer = 0;
+      save();
       sort_by_elo();
       
     }
@@ -178,7 +179,8 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
   delay(1000);
-
+  load();
+  sort_by_elo();
 }
 
 void loop() {
