@@ -16,8 +16,8 @@ struct player { uint16_t elo; String name; int id;};
 
 player players[PLAYERNUMBER] = { {1000, "FREDD", 0}, {1000, "HENRI", 1}, {1000, "ANNE ", 2}, {1000, "MARCO", 3}, {1000, "ANNIK", 4}, {1000, "ALEX ", 5}, {1000, "JAKOB", 6}, {1000, "TOBI ", 7},
                                  {1000, "MARIE", 8}, {1000, "THOMA", 9}, {1000, "OLLI ", 10},{1000, "CHRIS", 11},{1000, "ERMAN", 12},{1000, "STEFF", 13},{1000, "SVEN ", 14},{1000, "SANDR", 15},
-                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STE.C", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STE.H", 21},{1000, "PLY01", 22},{1000, "PLY02", 23},
-                                 {1000, "PLY03", 24} };
+                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STE.C", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STE.H", 21},{1000, "MOE  ", 22},{1000, "PLY01", 23},
+                                 {1000, "PLY02", 24} };
 int winner;
 
 int state = 0; //states: 0: list 1: select winner 2: select loser
@@ -31,7 +31,7 @@ long old_scroll_position = 0;
 
 bool draw_new = true;
 
-const int K = 15;
+const int K = 45;
 
 void load()
 {
@@ -149,6 +149,7 @@ void handleInput()
 
   if(button == 1 && prev_button == 0)
   {
+    draw_new = true;
     if(state == 1)
     {
       winner = list_pointer;
@@ -159,7 +160,7 @@ void handleInput()
       add_game(winner, list_pointer);
       display_result();
       list_pointer = 0;
-      //save();
+      save();
       //sort_by_elo(); 
     }
     state = state>=2?0:state+1;
@@ -190,19 +191,20 @@ void setup() {
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println("elorechner");
+  display.println("  Elorechner");
   display.display();
   delay(1500);
-  //load();
+  load();
   //sort_by_elo();
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("champion");
+  display.println("Champion");
+  display.println("ist");
   display.display();
   delay(1500);
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println(players[0].name);
+  display.println("   "+players[0].name);
   display.display();
   delay(3000);
 }
