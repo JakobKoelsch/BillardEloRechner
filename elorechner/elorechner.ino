@@ -29,6 +29,8 @@ int prev_button = 1;
 int list_pointer = 0; //highlighted
 long old_scroll_position = 0;
 
+bool draw_new = true;
+
 const int K = 15;
 
 void load()
@@ -141,12 +143,8 @@ void display_result()
 
 void handleInput()
 {
-  for(int i = 0; i<3;i++)
-  {
     prev_button = button;
-  }
   button = analogRead(A1)>500?1:0; //Enter
-  delay(10);
   
 
   if(button == 1 && prev_button == 0)
@@ -162,23 +160,25 @@ void handleInput()
       display_result();
       list_pointer = 0;
       //save();
-      sort_by_elo();
-      
+      //sort_by_elo(); 
     }
     state = state>=2?0:state+1;
     
   }
 
   long scroll_position = scrollEnc.read();
-  if(scroll_position>old_scroll_position)
+  Serial.println(scroll_position);
+  if(scroll_position-1>old_scroll_position)
   {
     list_pointer = list_pointer >= PLAYERNUMBER-1?PLAYERNUMBER-1:list_pointer+1;
     old_scroll_position = scroll_position;
+    draw_new = true;
   }
-  if(scroll_position<old_scroll_position)
+  if(scroll_position+1<old_scroll_position)
   {
     list_pointer = list_pointer == 0?0:list_pointer-1;
     old_scroll_position = scroll_position;
+    draw_new = true;
   }
 }
 
@@ -212,30 +212,32 @@ void loop() {
 
   handleInput();
 
-  Serial.println(list_pointer);
-  
-  switch(state)
+  if(draw_new)
   {
-    case 0:
-      // title: hall of fame
-      display_players("hall of fame", players, PLAYERNUMBER, list_pointer, true);
-      // toDo scroallable list of players sorted by elo
-      // on enter: go to state 1
-    break;
-    case 1:
-      // title: select winner
-      // toDo scrollable list of players by elo, one highlighted is the selected winner
-      display_players("select winner", players,PLAYERNUMBER, list_pointer, true);
-      // on enter: save highlighted as winner, proceed to 2
-    break;
-    case 2:
-      // title: select loser
-      // toDo scrollable list of players by alphabet including winner (excluding him appears very complicated), one highlighted is the selected loser
-      display_players("select loser", players, PLAYERNUMBER, list_pointer, true);
-      // on enter: save highlighted as loser. compute and enter new elos. go to state 0
-    break; 
-    default:
+    Serial.println("fresh draw");
+    switch(state)
+    {
+      case 0:
+        // title: hall of fame
+        display_players("hall of fame", players, PLAYERNUMBER, list_pointer, true);
+        // toDo scroallable list of players sorted by elo
+        // on enter: go to state 1
       break;
-      
+      case 1:
+        // title: select winner
+        // toDo scrollable list of players by elo, one highlighted is the selected winner
+        display_players("select winner", players,PLAYERNUMBER, list_pointer, true);
+        // on enter: save highlighted as winner, proceed to 2
+      break;
+      case 2:
+        // title: select loser
+        // toDo scrollable list of players by alphabet including winner (excluding him appears very complicated), one highlighted is the selected loser
+        display_players("select loser", players, PLAYERNUMBER, list_pointer, true);
+        // on enter: save highlighted as loser. compute and enter new elos. go to state 0
+      break; 
+      default:
+        break;
+    }
+    draw_new = false;
   }
 }
