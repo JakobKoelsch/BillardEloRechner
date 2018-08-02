@@ -3,7 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
 #include <Encoder.h>
-#define PLAYERNUMBER 25
+#define PLAYERNUMBER 26
 
 #define OLED_RESET 4
 
@@ -17,7 +17,7 @@ struct player { uint16_t elo; String name; int id;};
 player players[PLAYERNUMBER] = { {1000, "FREDD", 0}, {1000, "HENRI", 1}, {1000, "ANNE ", 2}, {1000, "MARCO", 3}, {1000, "ANNIK", 4}, {1000, "ALEX ", 5}, {1000, "JAKOB", 6}, {1000, "TOBI ", 7},
                                  {1000, "MARIE", 8}, {1000, "THOMA", 9}, {1000, "OLLI ", 10},{1000, "CHRIS", 11},{1000, "ERMAN", 12},{1000, "STEFF", 13},{1000, "SVEN ", 14},{1000, "SANDR", 15},
                                  {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STE.C", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STE.H", 21},{1000, "MOE  ", 22},{1000, "PLY01", 23},
-                                 {1000, "PLY02", 24} };
+                                 {1000, "PLY02", 24},{1000, "PLY03", 25} };
 int winner;
 
 int state = 0; //states: 0: list 1: select winner 2: select loser
@@ -28,6 +28,9 @@ int prev_button = 1;
 
 int list_pointer = 0; //highlighted
 long old_scroll_position = 0;
+#define scroll_threshold 3
+int scroll_up_counter = 0;
+int scroll_down_counter = 0;
 
 bool draw_new = true;
 
@@ -49,38 +52,55 @@ void save()
   }
 }
 
-int get_max_elo()
-{
-  int temp = 0;
-  for(int i = 0; i < PLAYERNUMBER; i++)
-  {
-    temp = players[i].elo>temp?players[i].elo:temp;
-  }
-  return temp;
-}
-
 void sort_by_elo()
 {
-  // toDo fix a quick root sort
+  bubbleSort();
+  //quickSort(0, PLAYERNUMBER-1); //needs too much memory
+}
 
-  int already_sorted = 0;
-
-  player temp[PLAYERNUMBER];
-  
-  for(int i = get_max_elo(); i>0 && already_sorted<PLAYERNUMBER;i--)
-  {
-    for(int j = 0; j<PLAYERNUMBER;j++)
-    {
-      if(players[j].elo == i)
-      {
-        temp[already_sorted++] = players[j];
+void bubbleSort() {
+      bool swapped = true;
+      int j = 0;
+      player tmp;
+      while (swapped) {
+            swapped = false;
+            j++;
+            for (int i = 0; i < PLAYERNUMBER - j; i++) {
+                  if (players[i].elo < players[i + 1].elo) {
+                        tmp = players[i];
+                        players[i] = players[i + 1];
+                        players[i + 1] = tmp;
+                        swapped = true;
+                  }
+            }
       }
-    }
-  }
-  for(int i = 0; i < PLAYERNUMBER;i++)
-  {
-    players[i] = temp[i];
-  }
+}
+
+void quickSort(int left, int right) 
+{
+      int i = left, j = right;
+      player tmp;
+      int pivot = (left + right) / 2;
+      /* partition */
+      while (i <= j) 
+      {
+            while (players[i].elo > players[pivot].elo)
+                  i++;
+            while (players[j].elo < players[pivot].elo)
+                  j--;
+            if (i <= j) {
+                  tmp = players[i];
+                  players[i] = players[j];
+                  players[j] = tmp;
+                  i++;
+                  j--;
+            }
+      }
+      /* recursion */
+      if (left < j)
+            quickSort(left, j);
+      if (i < right)
+            quickSort(i, right);
 }
 
 void display_players(String title, player data[], int dim, int pointer, bool highlight)
@@ -161,25 +181,40 @@ void handleInput()
       display_result();
       list_pointer = 0;
       save();
-      //sort_by_elo(); 
+      sort_by_elo(); 
     }
     state = state>=2?0:state+1;
     
   }
 
   long scroll_position = scrollEnc.read();
-  Serial.println(scroll_position);
+
+
   if(scroll_position-1>old_scroll_position)
   {
-    list_pointer = list_pointer >= PLAYERNUMBER-1?PLAYERNUMBER-1:list_pointer+1;
-    old_scroll_position = scroll_position;
-    draw_new = true;
+    scroll_up_counter++;
+    scroll_down_counter = 0;
+    if(scroll_up_counter>=scroll_threshold)
+    {
+      list_pointer = list_pointer >= PLAYERNUMBER-1?PLAYERNUMBER-1:list_pointer+1;
+      old_scroll_position = scroll_position;
+      draw_new = true;
+      scroll_up_counter = 0;
+    }
+    
   }
   if(scroll_position+1<old_scroll_position)
   {
-    list_pointer = list_pointer == 0?0:list_pointer-1;
-    old_scroll_position = scroll_position;
-    draw_new = true;
+    scroll_down_counter++;
+    scroll_up_counter = 0;
+    if(scroll_down_counter>=scroll_threshold)
+    {
+      list_pointer = list_pointer == 0?0:list_pointer-1;
+      old_scroll_position = scroll_position;
+      draw_new = true;
+      scroll_down_counter = 0;
+    }
+   
   }
 }
 
@@ -191,11 +226,12 @@ void setup() {
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println("  Elorechner");
+  display.println("Elorechner");
   display.display();
   delay(1500);
   load();
-  //sort_by_elo();
+  //save();
+  sort_by_elo();
   display.clearDisplay();
   display.setCursor(0,0);
   display.println("Champion");
