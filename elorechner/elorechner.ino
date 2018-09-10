@@ -3,7 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
 #include <Encoder.h>
-#define PLAYERNUMBER 26
+#define PLAYERNUMBER 25
 
 #define OLED_RESET 4
 
@@ -14,11 +14,14 @@ Encoder scrollEnc(5, 6);
 
 struct player { uint16_t elo; String name; int id;};
 
-player players[PLAYERNUMBER] = { {1000, "FREDD", 0}, {1000, "HENRI", 1}, {1000, "ANNE ", 2}, {1000, "MARCO", 3}, {1000, "ANNIK", 4}, {1000, "ALEX ", 5}, {1000, "JAKOB", 6}, {1000, "TOBI ", 7},
-                                 {1000, "MARIE", 8}, {1000, "THOMA", 9}, {1000, "OLLI ", 10},{1000, "CHRIS", 11},{1000, "ERMAN", 12},{1000, "STEFF", 13},{1000, "SVEN ", 14},{1000, "SANDR", 15},
-                                 {1000, "ANDRE", 16},{1000, "LUKAS", 17},{1000, "STE.C", 18},{1000, "JAN  ", 19},{1000, "DENNI", 20},{1000, "STE.H", 21},{1000, "MOE  ", 22},{1000, "PLY01", 23},
-                                 {1000, "PLY02", 24},{1000, "PLY03", 25} };
+player players[PLAYERNUMBER] = { {1000, "FRE", 0}, {1000, "HEN", 1}, {1000, "ANE", 2}, {1000, "MRC", 3}, {1000, "ANN", 4}, {1000, "ALX", 5}, {1000, "JAK", 6}, {1000, "TOB", 7},
+                                 {1000, "A.B", 8}, {1000, "THO", 9}, {1000, "OLL", 10},{1000, "CHR", 11},{1000, "ERM", 12},{1000, "STE", 13},{1000, "SVE", 14},{1000, "SAN", 15},
+                                 {1000, "AND", 16},{1000, "LUK", 17},{1000, "S.C", 18},{1000, "JAN", 19},{1000, "DEN", 20},{1000, "S.H", 21},{1000, "MOE", 22},{1000, "IMA", 23},
+                                 {1000, "JOS", 24} };
 int winner;
+int loser;
+int l_diff;
+int w_diff;
 
 int state = 0; //states: 0: list 1: select winner 2: select loser
 
@@ -134,8 +137,14 @@ void add_game(int winner, int loser)
   double E_w = Q(el_w)/(Q(el_w)+Q(el_l));
   double E_l = Q(el_l)/(Q(el_w)+Q(el_l));
 
-  players[winner].elo = (int)(el_w + K*(1 - E_w));
-  players[loser].elo = (int)(el_l - K*(1 - E_l));
+  int old_w_elo = players[winner].elo;
+  int old_l_elo = players[loser].elo;
+
+  players[winner].elo = (int)(el_w + K*(1 - E_w))+1;
+  players[loser].elo = (int)(el_l - K*(1 - E_l))+1;
+
+  w_diff = old_w_elo - players[winner].elo;
+  l_diff = players[loser].elo - old_l_elo;
 }
 
 int get_player_by_name(String name)
@@ -154,16 +163,16 @@ void display_result()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(players[winner].name + " has now " + players[winner].elo);
+  display.println(players[winner].name + " has now " + players[winner].elo + " +"+ w_diff);
   display.println("  winning vs");
-  display.println(players[list_pointer].name + " has now " + players[list_pointer].elo);
+  display.println(players[list_pointer].name + " has now " + players[list_pointer].elo + " -"+l_diff);
   display.display();
   delay(3000);
 }
 
 void handleInput()
 {
-    prev_button = button;
+  prev_button = button;
   button = analogRead(A1)>500?1:0; //Enter
   
 
@@ -177,14 +186,21 @@ void handleInput()
     }
     if(state == 2)
     {
-      add_game(winner, list_pointer);
-      display_result();
+      loser = list_pointer
       list_pointer = 0;
+      if(winner==loser)
+      {
+        list_pointer = 0;
+        return;
+      }
+      add_game(winner, loser);
       save();
+      display_result();
       sort_by_elo(); 
     }
     state = state>=2?0:state+1;
     
+    delay(500);
   }
 
   long scroll_position = scrollEnc.read();
