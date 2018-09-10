@@ -117,7 +117,7 @@ void display_players(String title, player data[], int dim, int pointer, bool hig
   display_pointer = display_pointer<0?0:display_pointer;
   for(int i = display_pointer; i < dim && i < display_pointer + 3 ; i++)
   {
-    display.println((highlight&&i==pointer?">":" ") +data[i].name + "   ---   "+data[i].elo);
+    display.println((highlight&&i==pointer?">":" ") +data[i].name + "  ---  "+data[i].elo +" ("+(1+i)+")");
   }
   display.display();
   delay(1);
@@ -186,7 +186,7 @@ void handleInput()
     }
     if(state == 2)
     {
-      loser = list_pointer
+      loser = list_pointer;
       list_pointer = 0;
       if(winner==loser)
       {
