@@ -141,7 +141,7 @@ void add_game(int winner, int loser)
   int old_l_elo = players[loser].elo;
 
   players[winner].elo = (int)(el_w + K*(1 - E_w))+1;
-  players[loser].elo = (int)(el_l - K*(1 - E_l))+1;
+  players[loser].elo = (int)(el_l + K*(-E_l))+1;
 
   w_diff = -(old_w_elo - players[winner].elo);
   l_diff = -(players[loser].elo - old_l_elo);
@@ -176,9 +176,9 @@ void bestaetigungsscreen()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(players[winner].name+"\nwins vs\n"+players[loser].name+"\n\n        ok?");
+  display.println(players[winner].name+"\nwins vs\n"+players[loser].name+"\n      ok?");
   display.display();
-  delay(3000);
+  delay(1000);
 }
 
 void handleInput()
