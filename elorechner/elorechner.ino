@@ -165,7 +165,18 @@ void display_result()
   display.clearDisplay();
   display.println(players[winner].name + " has now " + players[winner].elo + " +"+ w_diff);
   display.println("  winning vs");
-  display.println(players[list_pointer].name + " has now " + players[list_pointer].elo + " -"+l_diff);
+  display.println(players[loser].name + " has now " + players[loser].elo + " -"+l_diff);
+  display.display();
+  delay(3000);
+}
+
+void bestaetigungsscreen()
+{
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.clearDisplay();
+  display.println(players[winner].name+"\nwins vs\n"+players[loser].name);
   display.display();
   delay(3000);
 }
@@ -193,12 +204,16 @@ void handleInput()
         list_pointer = 0;
         return;
       }
+      bestaetigungsscreen();
+    }
+    if(state == 3)
+    {
       add_game(winner, loser);
       save();
       display_result();
       sort_by_elo(); 
     }
-    state = state>=2?0:state+1;
+    state = state>=3?0:state+1;
     
     delay(500);
   }
