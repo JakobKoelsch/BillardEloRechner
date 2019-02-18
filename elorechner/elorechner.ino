@@ -3,27 +3,33 @@
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
 #include <Encoder.h>
-#define PLAYERNUMBER 25
 
 #define OLED_RESET 4
+
+#define PLAYERSIZE 9
+
+#define PLAYERLIMIT 256
+
+/*  
+*   Player:
+*   elo #16
+*   name #40 (5 Buchstaben)
+*   Puffer #16
+*/
 
 Adafruit_SSD1306 display(OLED_RESET);
 Encoder scrollEnc(5, 6);
 
 // for further reference: http://cdn-reichelt.de/documents/datenblatt/F100/402097STEC12E08.PDF
 
-struct player { uint16_t elo; String name; int id;};
+struct player { uint16_t elo; String name;};
 
-player players[PLAYERNUMBER] = { {1000, "FRE", 0}, {1000, "HEN", 1}, {1000, "ANE", 2}, {1000, "MRC", 3}, {1000, "ANN", 4}, {1000, "ALX", 5}, {1000, "JAK", 6}, {1000, "TOB", 7},
-                                 {1000, "A.B", 8}, {1000, "THO", 9}, {1000, "TIM", 10},{1000, "JAN", 11},{1000, "ERM", 12},{1000, "STE", 13},{1000, "SVE", 14},{1000, "SAN", 15},
-                                 {1000, "AND", 16},{1000, "LUK", 17},{1000, "S.C", 18},{1000, "FLO", 19},{1000, "DEN", 20},{1000, "S.H", 21},{1000, "MOE", 22},{1000, "IMA", 23},
-                                 {1000, "JOS", 24}};
-int winner;
-int loser;
-int l_diff;
-int w_diff;
+players u_int8_t
 
-int state = 0; //states: 0: list 1: select winner 2: select loser
+int state = 0; //states: 0: init 1: menu 2: hall of fame, 3: new game, 4: add player
+
+int8_t players[PLAYERLIMIT];
+int playercount = 0;
 
 int button = 0;
 
@@ -35,41 +41,91 @@ long old_scroll_position = 0;
 int scroll_up_counter = 0;
 int scroll_down_counter = 0;
 
-bool draw_new = true;
+bool draw_new = true;   //Neue Eingabe? globale
 
-const int K = 45;
+const int K = 45;   // "Haerte" des Elosystems
 
-void load()
+
+//greift auf die sortierte players struktur zu und gibt den player auf position ranking aus dem eeprom zurück
+player get_player_at(int ranking)
 {
-  for(int i = 0; i < PLAYERNUMBER; i++)
+  return load_player(players[i]);
+}
+
+// setzt playercount und initialisiert die players bis dahin
+void init_players()
+{
+  int temp = 0;
+
+  int test;
+
+  do{
+    EEPROM.get(temp++*PLAYERSIZE, test)
+  } while(test != 0);
+
+  playercount = temp;
+
+  for(int i = 0; i<playercount; i++)
   {
-    EEPROM.get(i*2, players[i].elo);
+    players[i] = i;
   }
 }
 
-void save()
+player load_player(int id)
 {
-  for(int i = 0; i<PLAYERNUMBER;i++)
+  player temp;
+  EEPROM.get(id*PLAYERSIZE, temp);
+  return temp;
+}
+
+int load_elo(int id)
+{
+  int temp;
+  EEPROM.get(id*PLAYERSIZE, temp);
+  return temp;
+}
+
+// leert die EEPROM
+void dampfwalze()
+{
+  for(int i = 0; i < PLAYERLIMIT*PLAYERSIZE; i++)
   {
-    EEPROM.put(players[i].id*2, players[i].elo);
+    EEPROM.put(i, 00x0);
   }
+}
+
+void save_player(id, player)
+{
+
+  EEPROM.put(id*PLAYERSIZE, player.elo);
+  EEPROM.put(id*PLAYERSIZE+2, player.name);
+}
+
+int save_elo(id, elo)
+{
+  EEPROM.put(id*PLAYERSIZE, elo);
+}
+
+void sort_at_init()
+{
+  quickSort(0, PLAYERNUMBER-1);
+
 }
 
 void sort_by_elo()
 {
   bubbleSort();
-  //quickSort(0, PLAYERNUMBER-1); //needs too much memory
 }
 
 void bubbleSort() {
       bool swapped = true;
       int j = 0;
-      player tmp;
+      u_int8_t tmp;
       while (swapped) {
             swapped = false;
             j++;
-            for (int i = 0; i < PLAYERNUMBER - j; i++) {
-                  if (players[i].elo < players[i + 1].elo) {
+            for (int i = 0; i < playercount - j; i++) {
+                  if (get_player_at(i).elo < get_player_at(i+1).elo) {
                         tmp = players[i];
                         players[i] = players[i + 1];
                         players[i + 1] = tmp;
@@ -82,14 +138,14 @@ void bubbleSort() {
 void quickSort(int left, int right) 
 {
       int i = left, j = right;
-      player tmp;
+      u_int8_t tmp;
       int pivot = (left + right) / 2;
       /* partition */
       while (i <= j) 
       {
-            while (players[i].elo > players[pivot].elo)
+            while (get_player_at(i).elo > get_player_at(pivot).elo)
                   i++;
-            while (players[j].elo < players[pivot].elo)
+            while (get_player_at(i).elo < get_player_at(pivot).elo)
                   j--;
             if (i <= j) {
                   tmp = players[i];
@@ -108,6 +164,7 @@ void quickSort(int left, int right)
 
 void display_players(String title, player data[], int dim, int pointer, bool highlight)
 {
+  //TODO
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(15,0);
@@ -131,20 +188,22 @@ double Q(double x)
 void add_game(int winner, int loser)
 {
 
-  double el_w = players[winner].elo;
-  double el_l = players[loser].elo;
+  double el_w = load_elo(winner);
+  double el_l = load_elo(loser);
+  int old_w_elo = el_w;
+  int old_l_elo = el_l;
 
   double E_w = Q(el_w)/(Q(el_w)+Q(el_l));
   double E_l = Q(el_l)/(Q(el_w)+Q(el_l));
 
-  int old_w_elo = players[winner].elo;
-  int old_l_elo = players[loser].elo;
+  int new_w_elo = (int)(el_w + K*(1 - E_w))+1;
+  int new_l_elo = (int)(el_l + K*(-E_l))+1;
 
-  players[winner].elo = (int)(el_w + K*(1 - E_w))+1;
-  players[loser].elo = (int)(el_l + K*(-E_l))+1;
+  save_elo(winner, new_w_elo);
+  save_elo(loser, new_l_elo);
 
-  w_diff = -(old_w_elo - players[winner].elo);
-  l_diff = -(players[loser].elo - old_l_elo);
+  w_diff = -(old_w_elo - new_w_elo);
+  l_diff = -(new_l_elo - old_l_elo);
 }
 
 int get_player_by_name(String name)
@@ -274,6 +333,8 @@ void setup() {
   display.println("   "+players[0].name);
   display.display();
   delay(3000);
+
+  state = 1;
 }
 
 void loop() {
