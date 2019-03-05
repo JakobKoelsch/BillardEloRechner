@@ -22,7 +22,7 @@ Encoder scrollEnc(5, 6);
 
 // for further reference: http://cdn-reichelt.de/documents/datenblatt/F100/402097STEC12E08.PDF
 
-struct player { uint16_t elo; char name[5];};
+struct player { uint16_t elo; char name[7];};
 
 int state = 0; 
 
@@ -53,25 +53,25 @@ void first_load_players()
 {
   dampfwalze();
 
-   player p0 = {1000, "Fredy"};
+   player p0 = {1000, "Fredy\0"};
    save_player(0, p0);
-   player p1 = {1000, "Jakob"};
+   player p1 = {1000, "Jakob\0"};
    save_player(1, p1);
-   player p2 = {1000, "toni "};
+   player p2 = {1000, "toni \0"};
    save_player(2, p2);
-   player p3 = {1000, "heck "};
+   player p3 = {1000, "heck \0"};
    save_player(3, p3);
-   player p4 = {1000, "Thom "};
+   player p4 = {1000, "Thom \0"};
    save_player(4, p4);
-   player p5 = {1000, "Andi "};
+   player p5 = {1000, "Andi \0"};
    save_player(5, p5);
-   player p6 = {1000, "doni "};
+   player p6 = {1000, "doni \0"};
    save_player(6, p6);
-   player p7 = {1000, "AlexH"};
+   player p7 = {1000, "AlexH\0"};
    save_player(7, p7);
-   player p8 = {1000, "MarcS"};
+   player p8 = {1000, "MarcS\0"};
    save_player(8, p8);
-   player p9 = {1000, "Test "};
+   player p9 = {1000, "Test \0"};
    save_player(9, p9);
 }
 
@@ -92,10 +92,10 @@ void test()
 //greift auf die sortierte players struktur zu und gibt den player auf position ranking aus dem eeprom zurück
 player get_player_at(int ranking)
 {
-  Serial.print("Get Player at ");
-  Serial.print(ranking);
-  Serial.print(" gibt ");
-  Serial.println(players[ranking]);
+  //Serial.print("Get Player at ");
+  //Serial.print(ranking);
+  //Serial.print(" gibt ");
+  //Serial.println(players[ranking]);
   return load_player(players[ranking]);
 }
 
@@ -156,8 +156,8 @@ player load_player(int id)
 {
   player temp;
   EEPROM.get(id*PLAYERSIZE, temp);
-  Serial.print("Und ist ");
-  Serial.println(temp.name);
+  //Serial.print("Und ist ");
+  //Serial.println(temp.name);
   return temp;
 }
 
@@ -233,8 +233,36 @@ void display_players(String title,  int dim, int pointer, bool highlight)
   display_pointer = display_pointer<0?0:display_pointer;
   for(int i = display_pointer; i < dim && i < display_pointer + 3 ; i++)
   {
-    String name = get_player_at(i).name;
-    display.println((highlight&&i==pointer?">":" ") +name + "  -  "+get_player_at(i).elo +" ("+(1+i)+")");
+    Serial.print("...");
+    //Serial.println((highlight&&i==pointer?">":" ") +(String)get_player_at(i).name + "-"+get_player_at(i).elo);
+    //Serial.println((i==pointer?">":" ")+(String)get_player_at(i).name) + " - ";
+  
+    char ausgabe[21];
+    ausgabe[0] = i==pointer?'>':' ';
+    player pl = get_player_at(i);
+    for(int j= 1; j<6;j++)
+    {
+      ausgabe[j]=pl.name[j-1];
+    }
+    ausgabe[6] = ' ';
+    ausgabe[7] = ' ';
+    ausgabe[8] = '-';
+    ausgabe[9] = ' ';
+    ausgabe[10] = ' ';
+    ausgabe[11] = pl.elo/1000>0?0x30+pl.elo/1000:0x4f;
+    ausgabe[12] = pl.elo/100%10>0?0x30+pl.elo/100%10:0x4f;
+    ausgabe[13] = pl.elo/10%100>0?0x30+pl.elo/10%100:0x4f;
+    ausgabe[14] = pl.elo%1000>0?0x30+pl.elo%1000:0x4f;
+    ausgabe[15] = ' ';
+    ausgabe[16] = '(';
+    ausgabe[17] = (i+1)/10>0?0x30+(i+1)/10:0x4f;
+    ausgabe[18] = 0x30+(i+1)%10;
+    ausgabe[19] = ')';
+    ausgabe[20] = '\0';
+    
+
+    display.println(ausgabe);
+    
   }
   display.display();
   delay(1);
