@@ -22,7 +22,7 @@ Encoder scrollEnc(5, 6);
 
 // for further reference: http://cdn-reichelt.de/documents/datenblatt/F100/402097STEC12E08.PDF
 
-struct player { uint16_t elo; String name;};
+struct player { uint16_t elo; char name[5];};
 
 int state = 0; //states: 0: init 1: menu 2: hall of fame, 3: new game, 4: add player
 
@@ -49,15 +49,33 @@ int winner;
 int loser;
 
 
+void test()
+{
+  dampfwalze();
+  player freddy = {1000, "FREDY"};
+  player anni = {1001, "ANIKA"};
+  player jak = {999, "JAKOB"};
+  save_player(0, freddy);
+  save_player(1, anni);
+  save_player(2, jak);
+  Serial.println(freddy.name);
+}
+
+
 //greift auf die sortierte players struktur zu und gibt den player auf position ranking aus dem eeprom zurück
 player get_player_at(int ranking)
 {
   return load_player(players[ranking]);
 }
 
+
+
 // setzt playercount und initialisiert die players bis dahin
 void init_players()
 {
+
+  Serial.println("start init");
+  
   int temp = 0;
 
   int test;
@@ -66,20 +84,21 @@ void init_players()
     EEPROM.get(temp++*PLAYERSIZE, test);
   } while(test != 0);
 
-  playercount = temp;
+  playercount = temp-1;
 
+  Serial.print("found players:");
+  Serial.println(playercount);
   for(int i = 0; i<playercount; i++)
   {
+    Serial.println(load_player(i).name);
+    Serial.println(load_player(i).elo);
     players[i] = i;
   }
+
+  
 }
 
-player load_player(int id)
-{
-  player temp;
-  EEPROM.get(id*PLAYERSIZE, temp);
-  return temp;
-}
+
 
 int load_elo(int id)
 {
@@ -94,15 +113,21 @@ void dampfwalze()
   for(int i = 0; i < PLAYERLIMIT*PLAYERSIZE; i++)
   {
     int nothing = 0x00;
-    EEPROM.put(i, nothing);
+    EEPROM.update(i, nothing);
   }
 }
 
 void save_player(int id, player player)
 {
 
-  EEPROM.put(id*PLAYERSIZE, player.elo);
-  EEPROM.put(id*PLAYERSIZE+2, player.name);
+  EEPROM.put(id*PLAYERSIZE, player);
+}
+
+player load_player(int id)
+{
+  player temp;
+  EEPROM.get(id*PLAYERSIZE, temp);
+  return temp;
 }
 
 int save_elo(int id, short elo)
@@ -177,7 +202,8 @@ void display_players(String title,  int dim, int pointer, bool highlight)
   display_pointer = display_pointer<0?0:display_pointer;
   for(int i = display_pointer; i < dim && i < display_pointer + 3 ; i++)
   {
-    display.println((highlight&&i==pointer?">":" ") +get_player_at(i).name + "  ---  "+get_player_at(i).elo +" ("+(1+i)+")");
+    String name = get_player_at(i).name;
+    display.println((highlight&&i==pointer?">":" ") +name + "  -  "+get_player_at(i).elo +" ("+(1+i)+")");
   }
   display.display();
   delay(1);
@@ -215,9 +241,9 @@ void display_result()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(load_player(winner).name + " has now " + load_player(winner).elo + " +"+ w_diff);
+  display.println((String)load_player(winner).name + " has now " + load_player(winner).elo + " +"+ w_diff);
   display.println("  winning vs");
-  display.println(load_player(loser).name + " has now " + load_player(loser).elo + " -"+l_diff);
+  display.println((String)load_player(loser).name + " has now " + load_player(loser).elo + " -"+l_diff);
   display.display();
   delay(5000);
 }
@@ -228,7 +254,9 @@ void bestaetigungsscreen()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(load_player(winner).name+"\nwins vs\n"+load_player(loser).name+"\n      ok?");
+  String w_name = load_player(winner).name;
+  String l_name = load_player(loser).name;
+  display.println(w_name+"\nwins vs\n"+l_name+"\n      ok?");
   display.display();
   delay(1000);
 }
@@ -301,6 +329,8 @@ void handleInput()
 }
 
 void setup() {
+
+ 
   // put your setup code here, to run once:
   Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -311,9 +341,21 @@ void setup() {
   display.println("Elorechner");
   display.display();
   delay(1500);
+
+
+   test();
+
+  Serial.println("Start Debug");
+  
   init_players();
+
+  Serial.println("Players initialized");
+  
   //save();
   sort_by_elo();
+
+  Serial.println("sorted");
+  
   display.clearDisplay();
   display.setCursor(0,0);
   display.println("Champion");
@@ -322,7 +364,7 @@ void setup() {
   delay(1500);
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("   "+get_player_at(0).name);
+  display.println("   "+(String)get_player_at(0).name);
   display.display();
   delay(3000);
 
