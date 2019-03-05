@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"        
+        },
+                {
+                    "name": "Arduino",
+                    "includePath": [
+                        "{path-to-arduino}/hardware/arduino/avr/cores/arduino/",
+                        "{path-to-arduino}/hardware/arduino/avr/libraries/EEPROM/",
+                        "{path-to-arduino}/hardware/arduino/avr/libraries/SPI/",
+                        "{path-to-arduino}/hardware/arduino/avr/libraries/SoftwareSerial/",
+                        "{path-to-arduino}/hardware/arduino/avr/libraries/Wire/",
+                        "{path-to-arduino}/hardware/tools/avr/avr/include/",
+                        "{path-to-arduino}/hardware/tools/avr/avr/include/avr/",
+                        "{path-to-arduino}/hardware/tools/avr/avr/include/compat/",
+                        "{path-to-arduino}/hardware/tools/avr/avr/include/util/",
+                        "{path-to-arduino}/hardware/tools/avr/lib/gcc/avr/4.*.*/include/",
+                        "{path-to-arduino}/hardware/tools/avr/lib/gcc/avr/4.*.*/include-fixed/",
+                        "~/Arduino/libraries/*"
+                    ],
+                    "browse": {
+                        "limitSymbolsToIncludedHeaders": true,
+                        "databaseFilename": ""
+                    }
+                }
+    ],
+    "version": 4        
+}

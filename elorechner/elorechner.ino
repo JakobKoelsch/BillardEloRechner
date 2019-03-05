@@ -24,8 +24,6 @@ Encoder scrollEnc(5, 6);
 
 struct player { uint16_t elo; String name;};
 
-players u_int8_t
-
 int state = 0; //states: 0: init 1: menu 2: hall of fame, 3: new game, 4: add player
 
 int8_t players[PLAYERLIMIT];
@@ -45,11 +43,16 @@ bool draw_new = true;   //Neue Eingabe? globale
 
 const int K = 45;   // "Haerte" des Elosystems
 
+int w_diff;
+int l_diff;
+int winner;
+int loser;
+
 
 //greift auf die sortierte players struktur zu und gibt den player auf position ranking aus dem eeprom zurück
 player get_player_at(int ranking)
 {
-  return load_player(players[i]);
+  return load_player(players[ranking]);
 }
 
 // setzt playercount und initialisiert die players bis dahin
@@ -60,7 +63,7 @@ void init_players()
   int test;
 
   do{
-    EEPROM.get(temp++*PLAYERSIZE, test)
+    EEPROM.get(temp++*PLAYERSIZE, test);
   } while(test != 0);
 
   playercount = temp;
@@ -90,25 +93,26 @@ void dampfwalze()
 {
   for(int i = 0; i < PLAYERLIMIT*PLAYERSIZE; i++)
   {
-    EEPROM.put(i, 00x0);
+    int nothing = 0x00;
+    EEPROM.put(i, nothing);
   }
 }
 
-void save_player(id, player)
+void save_player(int id, player player)
 {
 
   EEPROM.put(id*PLAYERSIZE, player.elo);
   EEPROM.put(id*PLAYERSIZE+2, player.name);
 }
 
-int save_elo(id, elo)
+int save_elo(int id, short elo)
 {
   EEPROM.put(id*PLAYERSIZE, elo);
 }
 
 void sort_at_init()
 {
-  quickSort(0, PLAYERNUMBER-1);
+  quickSort(0, playercount-1);
 
 }
 
@@ -120,7 +124,7 @@ void sort_by_elo()
 void bubbleSort() {
       bool swapped = true;
       int j = 0;
-      u_int8_t tmp;
+      short tmp;
       while (swapped) {
             swapped = false;
             j++;
@@ -138,7 +142,7 @@ void bubbleSort() {
 void quickSort(int left, int right) 
 {
       int i = left, j = right;
-      u_int8_t tmp;
+      short tmp;
       int pivot = (left + right) / 2;
       /* partition */
       while (i <= j) 
@@ -162,9 +166,8 @@ void quickSort(int left, int right)
             quickSort(i, right);
 }
 
-void display_players(String title, player data[], int dim, int pointer, bool highlight)
+void display_players(String title,  int dim, int pointer, bool highlight)
 {
-  //TODO
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(15,0);
@@ -174,7 +177,7 @@ void display_players(String title, player data[], int dim, int pointer, bool hig
   display_pointer = display_pointer<0?0:display_pointer;
   for(int i = display_pointer; i < dim && i < display_pointer + 3 ; i++)
   {
-    display.println((highlight&&i==pointer?">":" ") +data[i].name + "  ---  "+data[i].elo +" ("+(1+i)+")");
+    display.println((highlight&&i==pointer?">":" ") +get_player_at(i).name + "  ---  "+get_player_at(i).elo +" ("+(1+i)+")");
   }
   display.display();
   delay(1);
@@ -206,25 +209,15 @@ void add_game(int winner, int loser)
   l_diff = -(new_l_elo - old_l_elo);
 }
 
-int get_player_by_name(String name)
-{
-  for(int i = 0; i < PLAYERNUMBER; i++)
-  {
-    if(players[i].name == name)
-      return i;
-  }
-  return -1;
-}
-
 void display_result()
 {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(players[winner].name + " has now " + players[winner].elo + " +"+ w_diff);
+  display.println(load_player(winner).name + " has now " + load_player(winner).elo + " +"+ w_diff);
   display.println("  winning vs");
-  display.println(players[loser].name + " has now " + players[loser].elo + " -"+l_diff);
+  display.println(load_player(loser).name + " has now " + load_player(loser).elo + " -"+l_diff);
   display.display();
   delay(5000);
 }
@@ -235,7 +228,7 @@ void bestaetigungsscreen()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println(players[winner].name+"\nwins vs\n"+players[loser].name+"\n      ok?");
+  display.println(load_player(winner).name+"\nwins vs\n"+load_player(loser).name+"\n      ok?");
   display.display();
   delay(1000);
 }
@@ -268,7 +261,6 @@ void handleInput()
     if(state == 3)
     {
       add_game(winner, loser);
-      save();
       display_result();
       sort_by_elo(); 
     }
@@ -286,7 +278,7 @@ void handleInput()
     scroll_down_counter = 0;
     if(scroll_up_counter>=scroll_threshold)
     {
-      list_pointer = list_pointer >= PLAYERNUMBER-1?PLAYERNUMBER-1:list_pointer+1;
+      list_pointer = list_pointer >= playercount-1?playercount-1:list_pointer+1;
       old_scroll_position = scroll_position;
       draw_new = true;
       scroll_up_counter = 0;
@@ -319,7 +311,7 @@ void setup() {
   display.println("Elorechner");
   display.display();
   delay(1500);
-  load();
+  init_players();
   //save();
   sort_by_elo();
   display.clearDisplay();
@@ -330,7 +322,7 @@ void setup() {
   delay(1500);
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("   "+players[0].name);
+  display.println("   "+get_player_at(0).name);
   display.display();
   delay(3000);
 
@@ -344,25 +336,25 @@ void loop() {
 
   if(draw_new)
   {
-    Serial.println("fresh draw");
+    // Serial.println("fresh draw");
     switch(state)
     {
       case 0:
         // title: hall of fame
-        display_players("hall of fame", players, PLAYERNUMBER, list_pointer, true);
+        display_players("hall of fame", playercount, list_pointer, true);
         // toDo scroallable list of players sorted by elo
         // on enter: go to state 1
       break;
       case 1:
         // title: select winner
         // toDo scrollable list of players by elo, one highlighted is the selected winner
-        display_players("select winner", players,PLAYERNUMBER, list_pointer, true);
+        display_players("select winner", playercount, list_pointer, true);
         // on enter: save highlighted as winner, proceed to 2
       break;
       case 2:
         // title: select loser
         // toDo scrollable list of players by alphabet including winner (excluding him appears very complicated), one highlighted is the selected loser
-        display_players("select loser", players, PLAYERNUMBER, list_pointer, true);
+        display_players("select loser", playercount, list_pointer, true);
         // on enter: save highlighted as loser. compute and enter new elos. go to state 0
       break; 
       default:
