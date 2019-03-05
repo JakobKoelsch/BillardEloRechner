@@ -51,28 +51,28 @@ int loser;
 
 void first_load_players()
 {
-  dampfwalze();
+  // dampfwalze();
 
-   player p0 = {1000, "Fredy\0"};
-   save_player(0, p0);
-   player p1 = {1000, "Jakob\0"};
-   save_player(1, p1);
-   player p2 = {1000, "toni \0"};
-   save_player(2, p2);
-   player p3 = {1000, "heck \0"};
-   save_player(3, p3);
-   player p4 = {1000, "Thom \0"};
-   save_player(4, p4);
-   player p5 = {1000, "Andi \0"};
-   save_player(5, p5);
-   player p6 = {1000, "doni \0"};
-   save_player(6, p6);
-   player p7 = {1000, "AlexH\0"};
-   save_player(7, p7);
-   player p8 = {1000, "MarcS\0"};
-   save_player(8, p8);
-   player p9 = {1000, "Test \0"};
-   save_player(9, p9);
+  //  player p0 = {1000, "Fredy\0"};
+  //  save_player(0, p0);
+  //  player p1 = {1000, "Jakob\0"};
+  //  save_player(1, p1);
+  //  player p2 = {1000, "toni \0"};
+  //  save_player(2, p2);
+  //  player p3 = {1000, "heck \0"};
+  //  save_player(3, p3);
+  //  player p4 = {1000, "Thom \0"};
+  //  save_player(4, p4);
+  //  player p5 = {1000, "Andi \0"};
+  //  save_player(5, p5);
+  //  player p6 = {1000, "doni \0"};
+  //  save_player(6, p6);
+  //  player p7 = {1000, "AlexH\0"};
+  //  save_player(7, p7);
+  //  player p8 = {1000, "MarcS\0"};
+  //  save_player(8, p8);
+  //  player p9 = {1000, "Test \0"};
+  //  save_player(9, p9);
 }
 
 
@@ -249,10 +249,14 @@ void display_players(String title,  int dim, int pointer, bool highlight)
     ausgabe[8] = '-';
     ausgabe[9] = ' ';
     ausgabe[10] = ' ';
-    ausgabe[11] = pl.elo/1000>0?0x30+pl.elo/1000:0x4f;
-    ausgabe[12] = pl.elo/100%10>0?0x30+pl.elo/100%10:0x4f;
-    ausgabe[13] = pl.elo/10%100>0?0x30+pl.elo/10%100:0x4f;
-    ausgabe[14] = pl.elo%1000>0?0x30+pl.elo%1000:0x4f;
+    int elo = pl.elo;
+    ausgabe[14] = elo%10>0?'0'+elo%10:0x4f;
+    elo/=10;
+    ausgabe[13] = elo%10>0?'0'+elo%10:0x4f;
+    elo/=10;
+    ausgabe[12] = elo%10>0?'0'+elo%10:0x4f;
+    elo/=10;
+    ausgabe[11] = elo%10>0?'0'+elo%10:0x4f;
     ausgabe[15] = ' ';
     ausgabe[16] = '(';
     ausgabe[17] = (i+1)/10>0?0x30+(i+1)/10:0x4f;
