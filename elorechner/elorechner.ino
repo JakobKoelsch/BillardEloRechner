@@ -24,7 +24,7 @@ Encoder scrollEnc(5, 6);
 
 struct player { uint16_t elo; char name[5];};
 
-int state = 0; //states: 0: init 1: menu 2: hall of fame, 3: new game, 4: add player
+int state = 0; 
 
 int8_t players[PLAYERLIMIT];
 int playercount = 0;
@@ -49,12 +49,39 @@ int winner;
 int loser;
 
 
+void first_load_players()
+{
+  dampfwalze();
+
+   player p0 = {1000, "Fredy"};
+   save_player(0, p0);
+   player p1 = {1000, "Jakob"};
+   save_player(1, p1);
+   player p2 = {1000, "toni "};
+   save_player(2, p2);
+   player p3 = {1000, "heck "};
+   save_player(3, p3);
+   player p4 = {1000, "Thom "};
+   save_player(4, p4);
+   player p5 = {1000, "Andi "};
+   save_player(5, p5);
+   player p6 = {1000, "doni "};
+   save_player(6, p6);
+   player p7 = {1000, "AlexH"};
+   save_player(7, p7);
+   player p8 = {1000, "MarcS"};
+   save_player(8, p8);
+   player p9 = {1000, "Test "};
+   save_player(9, p9);
+}
+
+
 void test()
 {
   dampfwalze();
-  player freddy = {1000, "FREDY"};
-  player anni = {1001, "ANIKA"};
-  player jak = {999, "JAKOB"};
+  player freddy = {1000, "FREDY\0"};
+  player anni = {1001, "ANIKA\0"};
+  player jak = {999, "JAKOB\0"};
   save_player(0, freddy);
   save_player(1, anni);
   save_player(2, jak);
@@ -65,6 +92,10 @@ void test()
 //greift auf die sortierte players struktur zu und gibt den player auf position ranking aus dem eeprom zurück
 player get_player_at(int ranking)
 {
+  Serial.print("Get Player at ");
+  Serial.print(ranking);
+  Serial.print(" gibt ");
+  Serial.println(players[ranking]);
   return load_player(players[ranking]);
 }
 
@@ -98,8 +129,6 @@ void init_players()
   
 }
 
-
-
 int load_elo(int id)
 {
   int temp;
@@ -127,6 +156,8 @@ player load_player(int id)
 {
   player temp;
   EEPROM.get(id*PLAYERSIZE, temp);
+  Serial.print("Und ist ");
+  Serial.println(temp.name);
   return temp;
 }
 
@@ -228,8 +259,8 @@ void add_game(int winner, int loser)
   int new_w_elo = (int)(el_w + K*(1 - E_w))+1;
   int new_l_elo = (int)(el_l + K*(-E_l))+1;
 
-  save_elo(winner, new_w_elo);
-  save_elo(loser, new_l_elo);
+  save_elo(players[winner], new_w_elo);
+  save_elo(players[loser], new_l_elo);
 
   w_diff = -(old_w_elo - new_w_elo);
   l_diff = -(new_l_elo - old_l_elo);
@@ -241,9 +272,9 @@ void display_result()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  display.println((String)load_player(winner).name + " has now " + load_player(winner).elo + " +"+ w_diff);
-  display.println("  winning vs");
-  display.println((String)load_player(loser).name + " has now " + load_player(loser).elo + " -"+l_diff);
+  display.println((String)get_player_at(winner).name +" +"+ w_diff);
+  display.println("  winning vs\n");
+  display.println((String)get_player_at(loser).name + " -"+l_diff);
   display.display();
   delay(5000);
 }
@@ -254,9 +285,7 @@ void bestaetigungsscreen()
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.clearDisplay();
-  String w_name = load_player(winner).name;
-  String l_name = load_player(loser).name;
-  display.println(w_name+"\nwins vs\n"+l_name+"\n      ok?");
+  display.println((String)get_player_at(winner).name+"\nwins vs\n"+(String)get_player_at(loser).name+"\n      ok?");
   display.display();
   delay(1000);
 }
@@ -343,7 +372,8 @@ void setup() {
   delay(1500);
 
 
-   test();
+   //test();
+   first_load_players();
 
   Serial.println("Start Debug");
   
@@ -368,7 +398,7 @@ void setup() {
   display.display();
   delay(3000);
 
-  state = 1;
+  state = 0;
 }
 
 void loop() {
