@@ -71,8 +71,23 @@ void first_load_players()
   //  save_player(7, p7);
   //  player p8 = {1000, "MarcS\0"};
   //  save_player(8, p8);
-  //  player p9 = {1000, "Test \0"};
-  //  save_player(9, p9);
+    // player p9 = {1000, "$MOE$\0"};
+    // save_player(9, p9);
+    // player p10 = {1000, "Sed12\0"};
+    // save_player(10, p10);
+    // player p11 = {1000, "_Zzz_\0"};
+    // save_player(11, p11);
+    // player p12 = {1000, "DVM  \0"};
+    // save_player(12, p12);
+    // player p13 = {1000, "Flo!!\0"};
+    // save_player(13, p13);
+    // player p14 = {1000, "Jair \0"};
+    // save_player(14, p14);
+    // player p15 = {1000, "Laz  \0"};
+    // save_player(15, p15);
+    // player p16 = {1000, "Lax  \0"};
+    // save_player(16, p16);
+   
 }
 
 
