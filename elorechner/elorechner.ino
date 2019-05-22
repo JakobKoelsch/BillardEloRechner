@@ -87,7 +87,10 @@ void first_load_players()
   //   save_player(15, p15);
   //   player p16 = {1000, "Lax  \0"};
   //   save_player(16, p16);
-   
+   //   player p22 = {1000, "*S_K*\0"};
+  //save_player(22, p22);
+     //player p23 = {1000, "Berns\0"};
+   //  save_player(23, p23);
 }
 
 
